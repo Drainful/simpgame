@@ -1,0 +1,26 @@
+* last time on Adrian's Bizarre Adventure
+- Was working on "path-region" function to easily make hallways
+  - then put it all together
+- Should make a defun to visualize a "region".
+  
+* goals
+** Short term
+- finish basic map generation
+- npc with basic ai
+** Long term
+- combat
+- dungeon features (doors at least)
+- items
+- colors
+- UI and message log
+- debug commands (one to unblock repl for debugging)
+** pie in the sky
+- fun combat
+- that rapid selection mechanism outlined in journal
+- advanced ai (read those old articles on roguebasin)
+- LOS algorithm + memory
+  
+* things to consider
+- next project, use asdf and packages to organize your code and facilitate building.
+- consider that "regions" (hash tables with equalp of vector2 key) may contain arbitrary information as "Values"
+  - perhaps use this to store (references? to) those things which have location in the model or contained classes.
