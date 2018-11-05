@@ -1,5 +1,6 @@
-(ql:quickload :iterate :silent t)
-(use-package 'iterate)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (ql:quickload :iterate :silent t)
+  (use-package 'iterate))
 
 (defclass model ()
   ((player :type player
@@ -21,17 +22,23 @@
 
 (defun between (x y)
   (if (< x y)
-      (iter (for i from x below y)
+      (iter (for i from x to y)
         (collect i))
-      (iter (for i from y below x)
+      (iter (for i from y to x)
         (collect i))))
 
-(defun make-region ()
-  (make-hash-table :test 'equalp))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+           (sb-ext:define-hash-table-test object-equal-p object-hash))
+
+(defun make-region (&rest points)
+  (let ((region (make-hash-table :test 'object-equal-p)))
+    (dolist (point points)
+      (setf (gethash point region) t))
+    region))
 
 ;; FUNCTION TYPE DECLARATIONS
 (declaim-ftypes
- (visualize-region (hash-table) nil)
+ (visualize-region (hash-table &optional integer integer) *)
  (carve-location (vector2 model) nil)
  (carve-region (hash-table model) nil)
  (merge-regions (&rest hash-table) hash-table)
@@ -39,10 +46,17 @@
  (box-region (integer integer integer integer) hash-table)
  (box-region-points (vector2 vector2) hash-table))
 
-;; (defun visualize-region (region)
-;;   "prints a graphical representation of the region for debugging"
-;;   (iter (for (location _) in-hashtable region)
-;;         (carve-location location model)))
+;; write a driver for region
+
+(defun visualize-region (region &optional (width 15) (height width))
+  "prints a graphical representation of the region for debugging"
+  (iter (for row from (- (floor height 2)) to (floor height 2))
+    (iter (for column from (- (floor width 2)) to (floor width 2))
+      (if (gethash (make-vector2 column row) region)
+          (write-char #\.)
+          (write-char #\ )))
+    (write-line ""))
+  region)
 
 (defun carve-location (location model) 
     (let ((x (get-x location))
@@ -50,15 +64,15 @@
       (setf (aref (get-floor-tiles model) x y) t)))
 
 (defun carve-region (region model)
-    (iter (for (location _) in-hashtable region)
-          (carve-location location model)))
+  (iter (for (location _) in-hashtable region)
+    (carve-location location model)))
 
 (defun merge-regions (&rest regions) 
     (let ((merged (make-region)))
       (dolist (region regions)
         (iter (for (location _) in-hashtable region)
-              (unless (gethash 'location merged)
-                (setf (gethash 'location merged) t))))
+              (unless (gethash location merged)
+                (setf (gethash location merged) t))))
       merged))
 
 (defun room-region (location w h)
@@ -86,40 +100,31 @@
         (x2 (get-x location2))
         (y1 (get-y location1))
         (y2 (get-y location2)))
-    (box-region x1 x2 y1 y2)))
+    (box-region x1 y1 x2 y2)))
 
 (defun path-region (starting-location steps
-                    &key (merge-region (make-region)))
+                    &key (region-to-merge (make-region)))
   "usage: (path-region (make-vector2 10 10) '((:h 10) (:v 5)))"
-  (let ((step (first steps)))
-    (if step
-        (let* ((orientation (car step))
-               (distance (cdr step))
-               (new-location (apply (case-orientation orientation :if-h #'add-x
-                                                                  :if-v #'add-y) starting-location distance))
+  (let ((current-step (first steps)))
+    (if current-step
+        (let* ((orientation (first current-step))
+               (distance (second current-step))
+               (new-location (ccase orientation
+                                ((:horizontal :h) (add-x starting-location distance))
+                                ((:vertical :v) (add-y starting-location distance))))
                (new-region (box-region-points starting-location new-location)))
           (path-region new-location (rest steps)
-                       :merge-region (merge-regions merge-region new-region)))
-        merge-region)))
+                       :region-to-merge (merge-regions new-region region-to-merge)))
+        region-to-merge)))
 
-(defun case-orientation (orientation &key if-h if-v)
-    (ccase orientation
-       ((:horizontal :h) if-h)
-       ((:vertical :v) if-v)))
-
-;; (defun path-region (starting-location &rest steps)
-;;   (let ((region (make-region))
-;;         (current-location starting-location)
-;;         (next-location ))
-;;     (dolist (step steps)
-;;       ;; assign current location to the result of the step,
-;;       ;; and as a side effect add every location along the step to the region
-;;       (setf current-location
-;;             (ccase (first step)
-;;               ;; if horizontal, make box starting 
-;;               ((:horizontal :h) (progn (merge-regions region )))
-;;               ((:vertical :v)))))
-;;     region))
+;; change to choose randomly between h or v first, or even do multiple twists/turns.
+(defun make-connecting-hallway (location1 location2)
+  "Make a nice hallway region between two locations (vector2s)"
+  (let ((dx (- (get-x location2) (get-x location1)))
+        (dy (- (get-y location2) (get-y location1))))
+    (if (eql (random 2) 0)
+        (path-region location1 `((:h ,dx) (:v ,dy)))
+        (path-region location1 `((:v ,dx) (:h ,dy))))))
 
 (defun hash-keys (hash-table)
   (loop for key being the hash-keys of hash-table collect key))
@@ -127,27 +132,26 @@
 (defun random-element (list)
   (nth (random (length list)) list))
 
-;; (defun ordering (val1 val2)
-;;   (if (< x1 x2)
-;;       :less-than
-;;       (if (> x1 x2)
-;;           :greater-than
-;;           :equal)))
+(defun make-connecting-regions-hallway (region-one region-two)
+  (let* ((r1-list (hash-keys region-one))
+         (r2-list (hash-keys region-two))
+         (location1 (random-element r1-list))
+         (location2 (random-element r2-list)))
+    (make-connecting-hallway location1 location2)))
 
-;; (defun make-connecting-hallway (location-one location-two)
-;;   (let* ((x1 (get-x location-one))
-;;          (x2 (get-x location-two))
-;;          (y1 (get-y location-one))
-;;          (y2 (get-y location-two))
-;;          (horizontal-ordering (ordering x1 x2))
-;;          (vertical-ordering (ordering y1 y2)))
-;;     (ccase `(,horizontal-ordering ,vertical-ordering) ((`(,:less-than ,:less-than))
-;;                                                        ('(,:less-than ,:greater-than))
-;;                                                        ('(,:less-than ,:equal))))))
+(defun test-locations-hallway ()
+  (dotimes (_ 3) (visualize-region (let* ((location1 (make-vector2 -2 -2))
+                                          (location2 (make-vector2 3 3))
+                                          (hallway (make-connecting-hallway location1 location2)))
+                                     (merge-regions hallway (point-region 0 0))) 12)))
 
-;; (defun make-connecting-regions-hallway (region-one region-two)
-;;   (let* ((r1-list (hash-keys region-one))
-;;          (r2-list (hash-keys region-two))
-;;          (location-one (random-element r1-list))
-;;          (location-two (random-element r2-list))
-;;          )))
+(defun test-regions-hallway ()
+  (dotimes (_ 3) (visualize-region (let* ((room1 (box-region -2 -2 3 3))
+                                          (room2 (box-region 6 6 10 10))
+                                          (hallway (make-connecting-regions-hallway room1 room2)))
+                                     (merge-regions room1 room2 hallway (point-region 0 0))) 30 22)))
+
+(defun point-region (x y)
+  (make-region (make-vector2 x y)))
+
+(testshit)

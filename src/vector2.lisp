@@ -22,3 +22,15 @@
 
 (defmethod format-class ((class vector2))
   (format nil "(~a, ~a)" (get-x class) (get-y class)))
+
+(defmethod object-equal-p ((o1 vector2) (o2 vector2))
+  (and (eql (get-x o1) (get-x o2)) (eql (get-y o1) (get-y o2))))
+
+;; (defmethod object-hash ((object vector2))
+;;   (base (+ (get-x object) (* 1000 (get-y object)))))
+
+(defmethod object-hash ((object vector2))
+  (let ((base (+ (get-x object) (* 1000 (get-y object)))))
+    (if (< base 0)
+        (expt base 2)
+        base)))
