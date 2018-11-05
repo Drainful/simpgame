@@ -5,7 +5,7 @@
   "declaims ftypes (in reverse order)"
   (let ((altered-body '()))
     (dolist (form body)
-      ;;(push `(apply declaim-ftype ,form) altered-body)
+      ;;(push `(check-type ,(first form) (function ,(second form) ,(third form))) altered-body)
       (push (push 'declaim-ftype form) altered-body))
     `(progn ,@altered-body)))
 

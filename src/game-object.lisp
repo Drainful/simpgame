@@ -1,5 +1,6 @@
 (defclass has-position ()
-  ((pos :initarg :position
+  ((pos :type vector2
+        :initarg :position
         :accessor pos)))
 
 (defmethod mutate-position-delta ((subject has-position) (delta vector2))
@@ -11,7 +12,8 @@
   (format-class (pos class)))
 
 (defclass drawable ()
-  ((glyph :reader get-glyph)))
+  ((glyph :type character
+          :reader get-glyph)))
 
 (defclass player (has-position drawable)
   ((glyph :initform #\@)))

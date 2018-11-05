@@ -2,10 +2,12 @@
 (use-package 'iterate)
 
 (defclass model ()
-  ((player :initarg :player
+  ((player :type player
+           :initarg :player
            :reader get-player)
-   (floor-tiles :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
-                :accessor floor-tiles)))
+   (floor-tiles :type array
+                :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
+                :reader get-floor-tiles)))
 
 (defun model-init (player)
   (defparameter *model* (make-instance 'model :player player))
@@ -14,8 +16,8 @@
         (y1 10)
         (y2 25))
     (iter (for x from x1 below x2)
-          (iter (for y from y1 below y2)
-                (setf (aref (floor-tiles *model*) x y) t)))))
+      (iter (for y from y1 below y2)
+        (setf (aref (get-floor-tiles *model*) x y) t)))))
 
 (defun between (x y)
   (if (< x y)
@@ -37,13 +39,15 @@
  (box-region (integer integer integer integer) hash-table)
  (box-region-points (vector2 vector2) hash-table))
 
-(defun visualize-region (region)
-  "prints a graphical representation of the region for debugging")
+;; (defun visualize-region (region)
+;;   "prints a graphical representation of the region for debugging"
+;;   (iter (for (location _) in-hashtable region)
+;;         (carve-location location model)))
 
 (defun carve-location (location model) 
     (let ((x (get-x location))
           (y (get-y location))) 
-      (setf (aref (floor-tiles model) x y) t)))
+      (setf (aref (get-floor-tiles model) x y) t)))
 
 (defun carve-region (region model)
     (iter (for (location _) in-hashtable region)
@@ -84,33 +88,38 @@
         (y2 (get-y location2)))
     (box-region x1 x2 y1 y2)))
 
-(defun vertical-hallway-region (location length)
-  (let ((region (make-region)))
-    (dotimes (distance length)
-      (setf (gethash (add-y location distance) region) t))
-    region))
+(defun path-region (starting-location steps
+                    &key (merge-region (make-region)))
+  "usage: (path-region (make-vector2 10 10) '((:h 10) (:v 5)))"
+  (let ((step (first steps)))
+    (if step
+        (let* ((orientation (car step))
+               (distance (cdr step))
+               (new-location (apply (case-orientation orientation :if-h #'add-x
+                                                                  :if-v #'add-y) starting-location distance))
+               (new-region (box-region-points starting-location new-location)))
+          (path-region new-location (rest steps)
+                       :merge-region (merge-regions merge-region new-region)))
+        merge-region)))
 
-(defun horizontal-hallway-region (location length)
-  (let ((region (make-region)))
-    (dotimes (distance length)
-      (setf (gethash (add-y location distance) region) t))
-    region))
+(defun case-orientation (orientation &key if-h if-v)
+    (ccase orientation
+       ((:horizontal :h) if-h)
+       ((:vertical :v) if-v)))
 
-(defun path-region (starting-location &rest steps)
-  "usage:
-(path-region (make-vector2 10 10) '(:h 10) '(:v 5))
-starts from (10, 10), go to (20, 10), go to (20, 15)"
-  (let ((region (make-region))
-        (current-location starting-location))
-    (dolist (step steps)
-      ;; assign current location to the result of the step,
-      ;; and as a side effect add every location along the step to the region
-      (setf current-location
-            (ccase (car step)
-              ;; if horizontal, make box starting 
-              ((:horizontal :h))
-              ((:vertical :v)))))
-    region))
+;; (defun path-region (starting-location &rest steps)
+;;   (let ((region (make-region))
+;;         (current-location starting-location)
+;;         (next-location ))
+;;     (dolist (step steps)
+;;       ;; assign current location to the result of the step,
+;;       ;; and as a side effect add every location along the step to the region
+;;       (setf current-location
+;;             (ccase (first step)
+;;               ;; if horizontal, make box starting 
+;;               ((:horizontal :h) (progn (merge-regions region )))
+;;               ((:vertical :v)))))
+;;     region))
 
 (defun hash-keys (hash-table)
   (loop for key being the hash-keys of hash-table collect key))

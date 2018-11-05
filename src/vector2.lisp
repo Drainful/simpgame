@@ -1,7 +1,9 @@
 (defclass vector2 ()
-  ((x :initarg :x
+  ((x :type integer
+      :initarg :x
       :reader get-x)
-   (y :initarg :y
+   (y :type integer
+      :initarg :y
       :reader get-y)))
 
 (defun add-x (vec amount)
