@@ -10,6 +10,9 @@
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
                 :reader get-floor-tiles)))
 
+;; (defclass layout-builder
+;;     ())
+
 (defun model-init (player)
   (defparameter *model* (make-instance 'model :player player))
   (let ((x1 10)
@@ -30,6 +33,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
            (sb-ext:define-hash-table-test object-equal-p object-hash))
 
+;;(deftype region hash-table :test `object-equal-p)
+
 (defun make-region (&rest points)
   (let ((region (make-hash-table :test 'object-equal-p)))
     (dolist (point points)
@@ -48,13 +53,15 @@
 
 ;; write a driver for region
 
-(defun visualize-region (region &optional (width 15) (height width))
+(defun visualize-region (region &optional (width 16) (height width))
   "prints a graphical representation of the region for debugging"
   (iter (for row from (- (floor height 2)) to (floor height 2))
     (iter (for column from (- (floor width 2)) to (floor width 2))
-      (if (gethash (make-vector2 column row) region)
-          (write-char #\.)
-          (write-char #\ )))
+      (case (gethash (make-vector2 column row) region)
+        ((:door) (write-char #\+))
+        ((nil) (write-char #\ ))
+        ((t) (write-char #\.))
+        (otherwise (write-char #\?))))
     (write-line ""))
   region)
 
@@ -71,8 +78,8 @@
     (let ((merged (make-region)))
       (dolist (region regions)
         (iter (for (location _) in-hashtable region)
-              (unless (gethash location merged)
-                (setf (gethash location merged) t))))
+          ;;unless (gethash location merged)
+          (setf (gethash location merged) (gethash location region))))
       merged))
 
 (defun room-region (location w h)
@@ -103,7 +110,7 @@
     (box-region x1 y1 x2 y2)))
 
 (defun path-region (starting-location steps
-                    &key (region-to-merge (make-region)))
+                    &key (region-to-merge (make-region)) (initial-door t) (ending-door t))
   "usage: (path-region (make-vector2 10 10) '((:h 10) (:v 5)))"
   (let ((current-step (first steps)))
     (if current-step
@@ -113,18 +120,21 @@
                                 ((:horizontal :h) (add-x starting-location distance))
                                 ((:vertical :v) (add-y starting-location distance))))
                (new-region (box-region-points starting-location new-location)))
+          (when initial-door (progn (print (gethash starting-location new-region)) (setf (gethash starting-location new-region) :door)))
+          (unless (or (not ending-door) (rest steps)) (setf (gethash new-location new-region) :door))
           (path-region new-location (rest steps)
-                       :region-to-merge (merge-regions new-region region-to-merge)))
+                       :region-to-merge (merge-regions new-region region-to-merge)
+                       :initial-door nil))
         region-to-merge)))
 
-;; change to choose randomly between h or v first, or even do multiple twists/turns.
+;; change to do multiple twists/turns?
 (defun make-connecting-hallway (location1 location2)
   "Make a nice hallway region between two locations (vector2s)"
   (let ((dx (- (get-x location2) (get-x location1)))
         (dy (- (get-y location2) (get-y location1))))
     (if (eql (random 2) 0)
         (path-region location1 `((:h ,dx) (:v ,dy)))
-        (path-region location1 `((:v ,dx) (:h ,dy))))))
+        (path-region location1 `((:v ,dy) (:h ,dx))))))
 
 (defun hash-keys (hash-table)
   (loop for key being the hash-keys of hash-table collect key))
@@ -140,18 +150,16 @@
     (make-connecting-hallway location1 location2)))
 
 (defun test-locations-hallway ()
-  (dotimes (_ 3) (visualize-region (let* ((location1 (make-vector2 -2 -2))
-                                          (location2 (make-vector2 3 3))
+  (dotimes (_ 3) (visualize-region (let* ((location1 (make-vector2 -1 -1))
+                                          (location2 (make-vector2 1 1))
                                           (hallway (make-connecting-hallway location1 location2)))
-                                     (merge-regions hallway (point-region 0 0))) 12)))
+                                     (merge-regions hallway (point-region 0 0))))))
 
 (defun test-regions-hallway ()
-  (dotimes (_ 3) (visualize-region (let* ((room1 (box-region -2 -2 3 3))
-                                          (room2 (box-region 6 6 10 10))
+  (dotimes (_ 3) (visualize-region (let* ((room1 (box-region -5 -5 -1 -1))
+                                          (room2 (box-region 3 3 7 7))
                                           (hallway (make-connecting-regions-hallway room1 room2)))
-                                     (merge-regions room1 room2 hallway (point-region 0 0))) 30 22)))
+                                     (merge-regions room1 room2 hallway)) 30 20)))
 
 (defun point-region (x y)
   (make-region (make-vector2 x y)))
-
-(testshit)

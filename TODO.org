@@ -24,4 +24,5 @@
 * things to consider
 - next project, use asdf and packages to organize your code and facilitate building.
 - consider that "regions" (hash tables with equalp of vector2 key) may contain arbitrary information as "Values"
-  - perhaps use this to store (references? to) those things which have location in the model or contained classes.
+  - !! perhaps use this to store (references? to) those things which have location in the model or contained classes.
+    - replace the boolean array with one of these, should be similar iteration speed, or at least same time complexity
