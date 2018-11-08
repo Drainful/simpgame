@@ -1,5 +1,5 @@
 * last time on Adrian's Bizarre Adventure
-~ Was working on "path-region" function to easily make hallways (DONE)
+- Was working on "path-region" function to easily make hallways (DONE)
   - then put it all together
 - Should make a defun to visualize a "region". (DONE)
 - Have non boolean values in the region maps to representat information for debugging at least.

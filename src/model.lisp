@@ -51,7 +51,7 @@
  (box-region (integer integer integer integer) hash-table)
  (box-region-points (vector2 vector2) hash-table))
 
-;; write a driver for region
+;; write a driver for regionS
 
 (defun visualize-region (region &optional (width 16) (height width))
   "prints a graphical representation of the region for debugging"
@@ -65,7 +65,7 @@
     (write-line ""))
   region)
 
-(defun carve-location (location model) 
+(defun carve-location (location model)
     (let ((x (get-x location))
           (y (get-y location))) 
       (setf (aref (get-floor-tiles model) x y) t)))
@@ -74,7 +74,7 @@
   (iter (for (location _) in-hashtable region)
     (carve-location location model)))
 
-(defun merge-regions (&rest regions) 
+(defun merge-regions (&rest regions)
     (let ((merged (make-region)))
       (dolist (region regions)
         (iter (for (location _) in-hashtable region)
@@ -92,6 +92,32 @@
                 (+ y (get-y location)))
                new-region) t)))
     new-region))
+
+(defun random-room-region (min-position max-position min-dims max-dims)
+  (let ((x (+ (get-x min-position) (random (get-x max-position))))
+        (y (+ (get-y min-position) (random (get-y max-position))))
+        (width (+ (get-x min-dims) (random (get-x max-dims))))
+        (height (+ (get-y min-dims) (random (get-y max-dims)))))
+    (room-region (make-vector2 x y) width height)))
+
+(defun assemble-dungeon (num-rooms size)
+  (let ((rooms '())
+        (hallways '())
+        (final-region (make-region)))
+    (dotimes (_ num-rooms)
+      (push (random-room-region
+             (make-vector2 0 0)
+             (make-vector2 size size)
+             (make-vector2 3 3)
+             (make-vector2 10 10))
+            rooms))
+    (dolist (room-1 rooms)
+      (dolist (room-2 rooms)
+        (push (make-connecting-regions-hallway room-1 room-2) hallways)))
+    (dolist (room rooms)
+      (dolist (hallway hallways)
+        (setf final-region (merge-regions final-region room hallway))))
+    final-region))
 
 (defun box-region (x1 y1 x2 y2)
   "defines a region from any 2 points"
@@ -120,8 +146,8 @@
                                 ((:horizontal :h) (add-x starting-location distance))
                                 ((:vertical :v) (add-y starting-location distance))))
                (new-region (box-region-points starting-location new-location)))
-          (when initial-door (progn (print (gethash starting-location new-region)) (setf (gethash starting-location new-region) :door)))
-          (unless (or (not ending-door) (rest steps)) (setf (gethash new-location new-region) :door))
+          ;; (when initial-door (progn (print (gethash starting-location new-region)) (setf (gethash starting-location new-region) :door)))
+          ;; (unless (or (not ending-door) (rest steps)) (setf (gethash new-location new-region) :door))
           (path-region new-location (rest steps)
                        :region-to-merge (merge-regions new-region region-to-merge)
                        :initial-door nil))
