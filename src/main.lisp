@@ -52,6 +52,7 @@
 (model-init *player*)
 
 (defun map-state ()
+  (model-init *player*)
   (with-screen (scr :input-echoing nil :input-blocking t :enable-colors t :cursor-visibility nil)
     (clear scr)
     ;; (move scr 2 0)

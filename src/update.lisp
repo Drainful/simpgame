@@ -33,5 +33,5 @@
   (let* ((target (get-move-target event))
          (x (get-x target))
          (y (get-y target)))
-    (when (aref (floor-tiles model) x y)
+    (when (aref (get-floor-tiles model) x y)
       (mutate-position-delta (get-subject event) (get-delta event)))))

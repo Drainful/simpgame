@@ -15,13 +15,9 @@
 
 (defun model-init (player)
   (defparameter *model* (make-instance 'model :player player))
-  (let ((x1 10)
-        (x2 60)
-        (y1 10)
-        (y2 25))
-    (iter (for x from x1 below x2)
-      (iter (for y from y1 below y2)
-        (setf (aref (get-floor-tiles *model*) x y) t)))))
+  (let ((dungeon (assemble-dungeon 10 70)))
+    (carve-region dungeon *model*)
+    (setf (pos player) (random-element (hash-keys dungeon)))))
 
 (defun between (x y)
   (if (< x y)
@@ -44,8 +40,8 @@
 ;; FUNCTION TYPE DECLARATIONS
 (declaim-ftypes
  (visualize-region (hash-table &optional integer integer) *)
- (carve-location (vector2 model) nil)
- (carve-region (hash-table model) nil)
+ (carve-location (vector2 model) *)
+ (carve-region (hash-table model) *)
  (merge-regions (&rest hash-table) hash-table)
  (room-region (vector2 integer integer) hash-table)
  (box-region (integer integer integer integer) hash-table)
@@ -107,13 +103,13 @@
     (dotimes (_ num-rooms)
       (push (random-room-region
              (make-vector2 0 0)
-             (make-vector2 size size)
+             (make-vector2 size (floor size 2))
              (make-vector2 3 3)
              (make-vector2 10 10))
             rooms))
     (dolist (room-1 rooms)
       (dolist (room-2 rooms)
-        (push (make-connecting-regions-hallway room-1 room-2) hallways)))
+        (when (> 15 (random 100)) (push (make-connecting-regions-hallway room-1 room-2) hallways))))
     (dolist (room rooms)
       (dolist (hallway hallways)
         (setf final-region (merge-regions final-region room hallway))))
