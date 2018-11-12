@@ -8,7 +8,14 @@
            :reader get-player)
    (floor-tiles :type array
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
-                :reader get-floor-tiles)))
+                :reader get-floor-tiles)
+   ;;()
+   ))
+
+(defmethod make-event-queue ()
+  (make-hash-table))
+
+;;(deftype event-queue () hash-table)
 
 ;; (defclass layout-builder
 ;;     ())
@@ -17,7 +24,7 @@
   (defparameter *model* (make-instance 'model :player player))
   (let ((dungeon (assemble-dungeon 10 70)))
     (carve-region dungeon *model*)
-    (setf (pos player) (random-element (hash-keys dungeon)))))
+    (setf (pos player) (random-element (get-locations dungeon)))))
 
 (defun between (x y)
   (if (< x y)
@@ -29,23 +36,55 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
            (sb-ext:define-hash-table-test object-equal-p object-hash))
 
-;;(deftype region hash-table :test `object-equal-p)
+(defclass hash-region ()
+  ((locations :type hash-table
+              :reader locations
+              :initform (make-hash-table :test 'object-equal-p))))
 
-(defun make-region (&rest points)
-  (let ((region (make-hash-table :test 'object-equal-p)))
+(defun make-hash-region (&rest points)
+  (let ((region (make-instance 'hash-region)))
     (dolist (point points)
-      (setf (gethash point region) t))
+      (set-location point region t))
     region))
 
+(defgeneric set-location (location region value)
+  (:documentation "Sets the object contained at location in region to value"))
+
+(defmethod set-location (location (region hash-region) value)
+  (setf (gethash location (locations region)) value))
+(defmethod set-location (location (region hash-table) value)
+  (setf (gethash location region) value))
+
+(defgeneric at-location (location region)
+  (:documentation "Returns the object stored at location in region"))
+
+(defmethod at-location (location (region hash-region))
+  (gethash location (locations region)))
+(defmethod at-location (location (region hash-table))
+  (gethash location region))
+
+(defgeneric get-locations (region)
+  (:documentation "Get the locations of a region"))
+
+(defmethod get-locations ((region hash-table))
+  (hash-keys region))
+(defmethod get-locations ((region hash-region))
+  (hash-keys (locations region)))
+
+(defun add-to-region (region &rest points)
+  (dolist (point points)
+    (set-location point region t)))
+
 ;; FUNCTION TYPE DECLARATIONS
-(declaim-ftypes
- (visualize-region (hash-table &optional integer integer) *)
- (carve-location (vector2 model) *)
- (carve-region (hash-table model) *)
- (merge-regions (&rest hash-table) hash-table)
- (room-region (vector2 integer integer) hash-table)
- (box-region (integer integer integer integer) hash-table)
- (box-region-points (vector2 vector2) hash-table))
+;; (declaim-ftypes
+;;  (visualize-region (hash-table &optional integer integer) *)
+;;  (carve-location (vector2 model) *)
+;;  (carve-region (hash-table model) *)
+;;  (merge-regions (&rest hash-table) hash-table)
+;;  (room-region (vector2 integer integer) hash-table)
+;;  (random-room-region (vector2 vector2 vector2 vector2) hash-table)
+;;  (box-region (integer integer integer integer) hash-table)
+;;  (box-region-points (vector2 vector2) hash-table))
 
 ;; write a driver for regionS
 
@@ -53,7 +92,7 @@
   "prints a graphical representation of the region for debugging"
   (iter (for row from (- (floor height 2)) to (floor height 2))
     (iter (for column from (- (floor width 2)) to (floor width 2))
-      (case (gethash (make-vector2 column row) region)
+      (case (at-location (make-vector2 column row) region)
         ((:door) (write-char #\+))
         ((nil) (write-char #\ ))
         ((t) (write-char #\.))
@@ -67,26 +106,25 @@
       (setf (aref (get-floor-tiles model) x y) t)))
 
 (defun carve-region (region model)
-  (iter (for (location _) in-hashtable region)
+  (iter (for location in (get-locations region))
     (carve-location location model)))
 
 (defun merge-regions (&rest regions)
-    (let ((merged (make-region)))
+    (let ((merged (make-hash-region)))
       (dolist (region regions)
-        (iter (for (location _) in-hashtable region)
-          ;;unless (gethash location merged)
-          (setf (gethash location merged) (gethash location region))))
+        (iter (for location in (get-locations region))
+          ;;unless (at-location location merged)
+          (set-location location merged (at-location location region))))
       merged))
 
 (defun room-region (location w h)
-  (let ((new-region (make-region)))
+  (let ((new-region (make-hash-region)))
     (dotimes (x w)
       (dotimes (y h)
-        (setf (gethash
-               (make-vector2
-                (+ x (get-x location))
-                (+ y (get-y location)))
-               new-region) t)))
+        (set-location (make-vector2
+                       (+ x (get-x location))
+                       (+ y (get-y location)))
+                      new-region t)))
     new-region))
 
 (defun random-room-region (min-position max-position min-dims max-dims)
@@ -99,7 +137,7 @@
 (defun assemble-dungeon (num-rooms size)
   (let ((rooms '())
         (hallways '())
-        (final-region (make-region)))
+        (final-region (make-hash-region)))
     (dotimes (_ num-rooms)
       (push (random-room-region
              (make-vector2 0 0)
@@ -117,10 +155,10 @@
 
 (defun box-region (x1 y1 x2 y2)
   "defines a region from any 2 points"
-  (let ((new-region (make-region)))
+  (let ((new-region (make-hash-region)))
     (dolist (x (between x1 x2))
       (dolist (y (between y1 y2))
-        (setf (gethash (make-vector2 x y) new-region) t)))
+        (set-location (make-vector2 x y) new-region t)))
     new-region))
 
 (defun box-region-points (location1 location2)
@@ -132,7 +170,7 @@
     (box-region x1 y1 x2 y2)))
 
 (defun path-region (starting-location steps
-                    &key (region-to-merge (make-region)) (initial-door t) (ending-door t))
+                    &key (region-to-merge (make-hash-region)) (initial-door nil) (ending-door nil))
   "usage: (path-region (make-vector2 10 10) '((:h 10) (:v 5)))"
   (let ((current-step (first steps)))
     (if current-step
@@ -142,8 +180,9 @@
                                 ((:horizontal :h) (add-x starting-location distance))
                                 ((:vertical :v) (add-y starting-location distance))))
                (new-region (box-region-points starting-location new-location)))
-          ;; (when initial-door (progn (print (gethash starting-location new-region)) (setf (gethash starting-location new-region) :door)))
-          ;; (unless (or (not ending-door) (rest steps)) (setf (gethash new-location new-region) :door))
+          (when initial-door (progn (print (at-location starting-location new-region))
+                                    (set-location starting-location new-region :door)))
+          (unless (or (not ending-door) (rest steps)) (set-location new-location new-region :door))
           (path-region new-location (rest steps)
                        :region-to-merge (merge-regions new-region region-to-merge)
                        :initial-door nil))
@@ -165,8 +204,8 @@
   (nth (random (length list)) list))
 
 (defun make-connecting-regions-hallway (region-one region-two)
-  (let* ((r1-list (hash-keys region-one))
-         (r2-list (hash-keys region-two))
+  (let* ((r1-list (get-locations region-one))
+         (r2-list (get-locations region-two))
          (location1 (random-element r1-list))
          (location2 (random-element r2-list)))
     (make-connecting-hallway location1 location2)))
@@ -184,4 +223,4 @@
                                      (merge-regions room1 room2 hallway)) 30 20)))
 
 (defun point-region (x y)
-  (make-region (make-vector2 x y)))
+  (make-hash-region (make-vector2 x y)))

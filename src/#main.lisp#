@@ -62,7 +62,6 @@
     (event-case (scr event)
       (#\q (return-from event-case))
       (otherwise
-
        (let ((e (create-input-event event)))
          (update *model* e)
          (clear scr)
