@@ -9,11 +9,26 @@
    (floor-tiles :type array
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
                 :reader get-floor-tiles)
-   ;;()
-   ))
+   (events :type event-hash-storage
+           :initform (make-event-hash-storage)
+           :reader events)))
 
-(defmethod make-event-queue ()
-  (make-hash-table))
+(defclass event-hash-storage ()
+  ((priority-to-events :type hash-table
+                       :initform (make-hash-table)
+                       :reader by-priority)))
+
+(defun make-event-hash-storage ()
+  (make-instance 'event-hash-storage))
+
+(defmethod get-events-of-priority (priority (events event-hash-storage))
+  (gethash priority (by-priority events)))
+
+(defmethod add-event (event (events event-hash-storage))
+  (push event (gethash (get-priority event) (by-priority events))))
+
+(defmethod purge-events ((events event-hash-storage))
+  (setf (slot-value events 'priority-to-events) (make-hash-table)))
 
 ;;(deftype event-queue () hash-table)
 
@@ -34,7 +49,7 @@
         (collect i))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-           (sb-ext:define-hash-table-test object-equal-p object-hash))
+  (sb-ext:define-hash-table-test object-equal-p object-hash))
 
 (defclass hash-region ()
   ((locations :type hash-table
@@ -135,8 +150,8 @@
     (room-region (make-vector2 x y) width height)))
 
 (defun assemble-dungeon (num-rooms size)
-  (let ((rooms '())
-        (hallways '())
+  (let ((rooms (list))
+        (hallways (list))
         (final-region (make-hash-region)))
     (dotimes (_ num-rooms)
       (push (random-room-region

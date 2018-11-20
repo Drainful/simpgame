@@ -15,5 +15,20 @@
   ((glyph :type character
           :reader get-glyph)))
 
+(defclass has-behavior () ())
+(defclass random-walker (has-position has-behavior) ())
+
+(defgeneric generate-behavior-events (actor)
+  (:documentation "generates the events to do with the behavior of the given actor."))
+
+(defmethod generate-behavior-events ((actor has-behavior))
+  (list))
+
+(defmethod generate-behavior-events ((actor random-walker))
+  (list (make-move-event actor (make-vector2-random-walk))))
+
 (defclass player (has-position drawable)
   ((glyph :initform #\@)))
+
+(defclass shade (hash-position drawable)
+  ((glyph :initform #\s)))

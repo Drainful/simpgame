@@ -3,7 +3,7 @@
 
 (defmacro declaim-ftypes (&rest body)
   "declaims ftypes (in reverse order)"
-  (let ((altered-body '()))
+  (let ((altered-body (list)))
     (dolist (form body)
       ;;(push `(check-type ,(first form) (function ,(second form) ,(third form))) altered-body)
       (push (push 'declaim-ftype form) altered-body))
@@ -57,21 +57,12 @@
     ;; (move scr 2 0)
     ;; (format scr "Type chars. Type q to quit.~%~%")
     (refresh scr)
-    ;; (setf (.color-pair scr) '(:yellow :red)
-    ;;       (.attributes scr) '(:bold))
     (event-case (scr event)
       (#\q (return-from event-case))
       (otherwise
-
-       (let ((e (create-input-event event)))
-         (update *model* e)
-         (clear scr)
-         (view *model* scr)
-         (refresh scr)))
-         ;;(format scr (format-class *player*))
-      ;; (otherwise (princ event scr)
-      ;;            (refresh scr))
-      )))
+       (progn
+         (update *model* event)
+         (view *model* scr))))))
 
 (defun start ()
   (map-state))

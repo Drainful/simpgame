@@ -15,6 +15,10 @@
 (fn make-vector2 (x y) (integer integer) vector2
   (make-instance 'vector2 :x x :y y))
 
+(defun make-vector2-random-walk ()
+  (flet ((random-coord () (- (random 3) 1)))
+    (make-vector2 (random-coord) (random-coord))))
+
 (fn sum-vector2 (vector-one vector-two) (vector2 vector2) vector2
   (make-instance 'vector2
                  :x (+ (get-x vector-one) (get-x vector-two))
