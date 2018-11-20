@@ -1,25 +1,25 @@
 * last time on Adrian's Bizarre Adventure
-- Was working on "path-region" function to easily make hallways (DONE)
-  - then put it all together
-- Should make a defun to visualize a "region". (DONE)
-- Have non boolean values in the region maps to representat information for debugging at least.
+- I was working on refactoring for event system and AI. Should be easy
+  from here to make a simple random walker AI
+- then worry about enemy following player
+- then worry about basic combat.
   
 * goals
 ** Short term
-- finish basic map generation
-- npc with basic ai
+- [X] finish basic map generation
+- [ ] npc with basic AI
 ** Long term
-- combat
-- dungeon features (doors at least)
-- items
-- colors
-- UI and message log
-- debug commands (one to unblock repl for debugging)
+- [ ] combat
+- [ ] dungeon features (doors at least)
+- [ ] items
+- [ ] colors
+- [ ] UI and message log
+- [ ] debug commands (one to unblock repl for debugging)
 ** pie in the sky
-- fun combat
-- that rapid selection mechanism outlined in journal
-- advanced ai (read those old articles on roguebasin)
-- LOS algorithm + memory
+- [ ] fun combat
+- [ ] that rapid selection mechanism outlined in journal
+- [ ] advanced ai (read those old articles on roguebasin)
+- [ ] LOS algorithm + memory
   
 * things to consider
 - next project, use asdf and packages to organize your code and facilitate building.
