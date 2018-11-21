@@ -4,10 +4,6 @@
 
 (defclass model ()
   (
-   ;; (player :type player
-   ;;         :initform (make-instance 'player :position (make-vector2 11 11))
-   ;;         ;;:reader get-player
-   ;;         )
    (floor-tiles :type array
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
                 :reader get-floor-tiles)
@@ -18,9 +14,18 @@
    (game-objects :type game-object-hash-storage
                  :initform (make-game-object-storage)
                  :accessor get-game-objects)
+   (game-objects-by-positon :type hash-table
+                            :initform (make-hash-table :test 'object-equal-p)
+                            :accessor get-game-objects-by-position)
    (events :type event-hash-storage
            :initform (make-event-hash-storage)
            :reader events)))
+
+(defmethod get-object-at ((position vector2) (model model))
+  (gethash position (get-game-objects-by-position model)))
+
+(defmethod tile-at-p ((position vector2) (model model))
+  (aref (get-floor-tiles model) (get-x position) (get-y position)))
 
 (defmethod get-player ((model model))
   (first (set-to-list (get-game-objects-of-class (find-class 'player) (get-game-objects model)))))
@@ -42,10 +47,22 @@
     (setf (gethash (class-name superclass) (get-game-objects objects))
           (set-add game-object (gethash (class-name superclass) (get-game-objects objects))))))
 
+(defmethod add-game-object (game-object (model model))
+  (add-game-object game-object (get-game-objects model)))
+;; Adding game object to model involves updating position hash
+(defmethod add-game-object :after ((game-object has-position) (model model))
+  (setf (gethash (pos game-object) (get-game-objects-by-position model)) game-object))
+
 (defmethod remove-game-object (game-object (objects game-object-hash-storage))
   (dolist (superclass (get-superclasses game-object))
     (setf (gethash (class-name superclass) (get-game-objects objects))
           (set-remove game-object (gethash (class-name superclass) (get-game-objects objects))))))
+
+(defmethod remove-game-object (game-object (model model))
+  (remove-game-object game-object (get-game-objects model)))
+;; Removing game object to model involves updating position hash
+(defmethod remove-game-object :after ((game-object has-position) (model model))
+  (remhash (pos game-object) (get-game-objects-by-position model)))
 
 (defmethod get-game-objects-of-class (class (objects game-object-hash-storage))
   (gethash (class-name class) (get-game-objects objects)))
@@ -79,15 +96,14 @@
     (spawn (make-instance 'player) *model*)
     (defparameter *player* (get-player *model*))
     (dotimes (_ 4)
-      (spawn (make-instance 'confused-snake) *model*))
-    ;;(setf (pos (get-player *model*)) (random-element (get-locations dungeon)))
-    ))
+      (spawn (make-instance 'confused-snake) *model*))))
 
 ;; (spawn (make-instance 'confused-shade) *model*)
 
 (defun spawn (has-position model)
   (setf (pos has-position) (random-element (get-locations (get-dungeon model))))
-  (add-game-object has-position (get-game-objects model)))
+  (unless (get-object-at (pos has-position) model)
+    (add-game-object has-position (get-game-objects model))))
 
 (defun between (x y)
   (if (< x y)

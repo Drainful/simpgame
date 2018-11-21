@@ -25,6 +25,10 @@
                          (pos subject)
                          delta)))
 
+(defmethod mutate-position ((subject has-position) (target vector2))
+  (setf (pos subject) target)
+  target)
+
 (defmethod format-class ((class has-position))
   (format-class (pos class)))
 

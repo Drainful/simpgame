@@ -1,9 +1,7 @@
 * last time on Adrian's Bizarre Adventure
 - Need to make game object storage compatible with class redefinition of inheritance.
-- I was working on refactoring for event system and AI. Should be easy
-  from here to make a simple random walker AI
-- then worry about enemy following player
-- then worry about basic combat.
+- worry about enemy following player
+- worry about basic combat.
   
 * goals
 ** Short term

@@ -68,12 +68,14 @@
 (defgeneric resolve-event (model event))
 
 (defmethod resolve-event (model (event move-event))
-  (format-class event)
-  (let* ((target (get-move-target event))
-         (x (get-x target))
-         (y (get-y target)))
-    (when (aref (get-floor-tiles model) x y)
-      (mutate-position-delta (get-subject event) (get-delta event)))))
+  (update-position-collide (get-subject event) (get-move-target event) model))
+
+(defun update-position-collide (subject target model)
+  (when (and (tile-at-p target model)
+             (not (get-object-at target model)))
+    (remhash (pos subject) (get-game-objects-by-position model))
+    (setf (gethash target (get-game-objects-by-position model)) subject)
+    (mutate-position subject target)))
 
 ;;;; UPDATE FUNCTION
 (defun update (model player-input)
