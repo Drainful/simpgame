@@ -3,15 +3,52 @@
   (use-package 'iterate))
 
 (defclass model ()
-  ((player :type player
-           :initarg :player
-           :reader get-player)
+  (
+   ;; (player :type player
+   ;;         :initform (make-instance 'player :position (make-vector2 11 11))
+   ;;         ;;:reader get-player
+   ;;         )
    (floor-tiles :type array
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
                 :reader get-floor-tiles)
+   (dungeon :type hash-region
+            :initform (make-hash-region)
+            :initarg :dungeon
+            :reader get-dungeon)
+   (game-objects :type game-object-hash-storage
+                 :initform (make-game-object-storage)
+                 :accessor get-game-objects)
    (events :type event-hash-storage
            :initform (make-event-hash-storage)
            :reader events)))
+
+(defmethod get-player ((model model))
+  (first (set-to-list (get-game-objects-of-class (find-class 'player) (get-game-objects model)))))
+
+(defun clear-game-objects (model)
+  (setf (get-game-objects model) (make-game-object-storage)))
+
+(defclass game-object-hash-storage ()
+  ((game-objects :type hash-table
+                 :initform (make-hash-table)
+                 :reader get-game-objects
+                 :documentation "map of superclass name to set of game object")))
+
+(defun make-game-object-storage ()
+  (make-instance 'game-object-hash-storage))
+
+(defmethod add-game-object (game-object (objects game-object-hash-storage))
+  (dolist (superclass (get-superclasses game-object))
+    (setf (gethash (class-name superclass) (get-game-objects objects))
+          (set-add game-object (gethash (class-name superclass) (get-game-objects objects))))))
+
+(defmethod remove-game-object (game-object (objects game-object-hash-storage))
+  (dolist (superclass (get-superclasses game-object))
+    (setf (gethash (class-name superclass) (get-game-objects objects))
+          (set-remove game-object (gethash (class-name superclass) (get-game-objects objects))))))
+
+(defmethod get-game-objects-of-class (class (objects game-object-hash-storage))
+  (gethash (class-name class) (get-game-objects objects)))
 
 (defclass event-hash-storage ()
   ((priority-to-events :type hash-table
@@ -35,11 +72,22 @@
 ;; (defclass layout-builder
 ;;     ())
 
-(defun model-init (player)
-  (defparameter *model* (make-instance 'model :player player))
+(defun model-init ()
   (let ((dungeon (assemble-dungeon 10 70)))
+    (defparameter *model* (make-instance 'model :dungeon dungeon))
     (carve-region dungeon *model*)
-    (setf (pos player) (random-element (get-locations dungeon)))))
+    (spawn (make-instance 'player) *model*)
+    (defparameter *player* (get-player *model*))
+    (dotimes (_ 4)
+      (spawn (make-instance 'confused-snake) *model*))
+    ;;(setf (pos (get-player *model*)) (random-element (get-locations dungeon)))
+    ))
+
+;; (spawn (make-instance 'confused-shade) *model*)
+
+(defun spawn (has-position model)
+  (setf (pos has-position) (random-element (get-locations (get-dungeon model))))
+  (add-game-object has-position (get-game-objects model)))
 
 (defun between (x y)
   (if (< x y)
@@ -211,9 +259,6 @@
     (if (eql (random 2) 0)
         (path-region location1 `((:h ,dx) (:v ,dy)))
         (path-region location1 `((:v ,dy) (:h ,dx))))))
-
-(defun hash-keys (hash-table)
-  (loop for key being the hash-keys of hash-table collect key))
 
 (defun random-element (list)
   (nth (random (length list)) list))

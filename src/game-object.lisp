@@ -1,5 +1,22 @@
+;;;; BUILDING BLOCKS
+(defclass game-object ()
+  ((id-counter :type integer
+               :allocation :class
+               :initform 0
+               :accessor id-counter)
+   (id :type integer
+       :reader get-id)))
+
+(defmethod object-hash ((object game-object))
+  (get-id object))
+
+(defmethod initialize-instance :after ((object game-object) &key)
+  (setf (slot-value object 'id) (id-counter object))
+  (incf (id-counter object)))
+
 (defclass has-position ()
   ((pos :type vector2
+        :initform (make-vector2 0 0)
         :initarg :position
         :accessor pos)))
 
@@ -15,20 +32,26 @@
   ((glyph :type character
           :reader get-glyph)))
 
+(defclass drawable-world-position (drawable has-position) ())
+
+(defmethod draw-object ((drawable drawable-world-position) screen)
+  (move screen (get-y (pos drawable)) (get-x (pos drawable)))
+  (format screen (string (get-glyph drawable))))
+
+;;; BEHAVIOR
 (defclass has-behavior () ())
 (defclass random-walker (has-position has-behavior) ())
 
-(defgeneric generate-behavior-events (actor)
-  (:documentation "generates the events to do with the behavior of the given actor."))
-
-(defmethod generate-behavior-events ((actor has-behavior))
-  (list))
-
-(defmethod generate-behavior-events ((actor random-walker))
-  (list (make-move-event actor (make-vector2-random-walk))))
-
-(defclass player (has-position drawable)
+;;;; GAME OBJECTS
+(defclass player (drawable-world-position game-object)
   ((glyph :initform #\@)))
 
-(defclass shade (hash-position drawable)
+(defmethod format-class ((object player))
+  (concatenate 'string "player: " (call-next-method)))
+
+(defclass confused-snake (random-walker drawable-world-position game-object)
   ((glyph :initform #\s)))
+
+(defmethod format-class ((object confused-snake))
+  (concatenate 'string "snake: " (call-next-method)))
+

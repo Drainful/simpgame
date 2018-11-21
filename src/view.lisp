@@ -1,11 +1,6 @@
 (defun view (model scr)
   (clear scr)
-  (let* ((player (get-player model))
-         (p (pos player))
-         (p-x (get-x p))
-         (p-y (get-y p))
-         (glyph (get-glyph player))
-         (width (min (.width scr) (array-dimension (get-floor-tiles *model*) 0)))
+  (let* ((width (min (.width scr) (array-dimension (get-floor-tiles *model*) 0)))
          (height (min (.height scr) (array-dimension (get-floor-tiles *model*) 1))))
     (loop for x from 0 below width do
          (loop for y from 0 below height do
@@ -13,6 +8,9 @@
               (format scr (if (aref (get-floor-tiles model) x y)
                               "."
                               " "))))
-    (move scr p-y p-x)
-    (format scr (string glyph)))
+    (dolist (drawable (set-to-list (get-game-objects-of-class (find-class 'drawable) (get-game-objects model))))
+      (draw-object drawable scr)))
   (refresh scr))
+
+(defgeneric draw-object (drawable screen)
+  (:documentation "draws a drawable object on the screen"))

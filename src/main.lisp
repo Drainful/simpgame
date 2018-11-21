@@ -1,19 +1,22 @@
+;; MACROS
 (defmacro declaim-ftype (fname argument-types return-type)
+  "create function type declaration"
   `(declaim (ftype (function ,argument-types ,return-type) ,fname)))
 
 (defmacro declaim-ftypes (&rest body)
   "declaims ftypes (in reverse order)"
   (let ((altered-body (list)))
     (dolist (form body)
-      ;;(push `(check-type ,(first form) (function ,(second form) ,(third form))) altered-body)
       (push (push 'declaim-ftype form) altered-body))
     `(progn ,@altered-body)))
 
 (defmacro fn (fname lambda-list argument-types return-type &rest body)
+  "combined function and function type declatation"
   `(progn
      (declaim (ftype (function ,argument-types ,return-type) ,fname))
      (defun ,fname ,lambda-list ,@body)))
 
+;; PACKAGES
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (SB-DEBUG:BACKTRACE-AS-LIST)
   (sb-ext:restrict-compiler-policy 'safety 3)
@@ -23,6 +26,7 @@
   (use-package ':generic-comparability)
   (use-package ':croatoan))
 
+;; LOAD FILES
 (defun load-relative (filespec)
   (load (merge-pathnames filespec *load-pathname*)))
 (load-relative "utils.lisp")
@@ -32,45 +36,19 @@
 (load-relative "view.lisp")
 (load-relative "update.lisp")
 
+;; INITIALIZE PARAMETERS
 (defparameter +world-size+ 1000)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (model-init))
 
-(defparameter *player* (make-instance 'player :position (make-vector2 11 11)))
-
-(defun player-move-event (x y)
-  (make-move-event
-   *player*
-   (make-vector2 x y)))
-
-;; could create events other than move
-(defun create-input-event (input)
-   (case input
-     (#\h (player-move-event -1 0))
-     (#\j (player-move-event 0 1))
-     (#\k (player-move-event 0 -1))
-     (#\l (player-move-event 1 0))
-     (otherwise (player-move-event 0 0))))
-
+;; CORE LOOP, update then view.
 (defun map-state ()
-  (model-init *player*)
   (with-screen (scr :input-echoing nil :input-blocking t :enable-colors t :cursor-visibility nil)
-    (clear scr)
-    ;; (move scr 2 0)
-    ;; (format scr "Type chars. Type q to quit.~%~%")
-    (refresh scr)
     (event-case (scr event)
       (#\q (return-from event-case))
       (otherwise
-       (progn
-         (update *model* event)
-         (view *model* scr))))))
+       (update *model* event)
+       (view *model* scr)))))
 
 (defun start ()
   (map-state))
-
-(defvar *thread* nil)
-
-(defun threaded-start ()
-  (defparameter *thread* (sb-thread:make-thread #'start)))
-
-(defun force-quit ()
-  (sb-thread:terminate-thread *thread*))
