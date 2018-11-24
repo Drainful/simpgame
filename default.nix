@@ -9,7 +9,6 @@ with import <nixpkgs> {};
 
           shellHooks = ''
               emacs --daemon
-              quicklisp-to-nix .   
           '';
     };
 }

@@ -20,21 +20,45 @@
 (defclass move-event (event)
   ((subject :initarg :subject
             :reader get-subject)
-   (delta :initarg :delta
-          :reader get-delta)
+   (target :initarg :target
+           :reader get-target)
    (priority :initform :movement)))
 
-(defmethod make-move-event ((subject has-position) (vector vector2))
-    (make-instance 'move-event :subject subject :delta vector))
+(defmethod make-move-event-delta ((subject has-position) (delta vector2))
+  (make-instance 'move-event :subject subject :target (sum-vector (pos subject) delta)))
 
-(defmethod get-move-target ((move-event move-event))
-  (sum-vector2 (pos (get-subject move-event)) (get-delta move-event)))
+(defmethod make-move-event ((subject has-position) (target vector2))
+  (make-instance 'move-event :subject subject :target target))
+
+(defmethod get-delta ((move-event move-event))
+  (difference-vector (get-target move-event) (pos (get-subject move-event))))
 
 (defmethod format-class ((class move-event))
   (format-class (get-delta class)))
 
+(defclass attack-event (event)
+  ((target :type vector2
+           :initarg :target
+           :reader get-target)
+   (damage :type integer
+           :initarg :damage
+           :reader get-damage)))
+
+(defgeneric make-attack-event (target actor)
+  (:documentation "
+Make at attack event from the actor to the target location.
+Damage depends on the qualities of the actor."))
+
+(defmethod make-attack-event (target actor)
+  (make-instance 'attack-event :target target :damage 1))
+
+(defmethod move-or-attack-event (target actor model)
+  (if (get-object-at target model)
+      (make-attack-event target actor)
+      (make-move-event actor target)))
+
 (defun player-move-event (x y)
-  (make-move-event
+  (make-move-event-delta
    *player*
    (make-vector2 x y)))
 
@@ -54,7 +78,7 @@
 (defmethod generate-behavior-events ((actor has-behavior) model)
   (list))
 (defmethod generate-behavior-events ((actor random-walker) model)
-  (list (make-move-event actor (make-vector2-random-walk))))
+  (list (make-move-event-delta actor (make-vector2-random-walk))))
 
 ;;;; EVENT RESOLUTION
 (defun resolve-events (model)
@@ -67,8 +91,8 @@
 
 (defgeneric resolve-event (model event))
 
-(defmethod resolve-event (model (event move-event))
-  (update-position-collide (get-subject event) (get-move-target event) model))
+(defmethod resolve-event ((model model) (event move-event))
+  (update-position-collide (get-subject event) (get-target event) model))
 
 (defun update-position-collide (subject target model)
   (when (and (tile-at-p target model)

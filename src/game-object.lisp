@@ -21,7 +21,7 @@
         :accessor pos)))
 
 (defmethod mutate-position-delta ((subject has-position) (delta vector2))
-  (setf (pos subject) (sum-vector2
+  (setf (pos subject) (sum-vector
                          (pos subject)
                          delta)))
 

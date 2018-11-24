@@ -19,10 +19,16 @@
   (flet ((random-coord () (- (random 3) 1)))
     (make-vector2 (random-coord) (random-coord))))
 
-(fn sum-vector2 (vector-one vector-two) (vector2 vector2) vector2
+(defmethod sum-vector ((vector-one vector2) (vector-two vector2))
   (make-instance 'vector2
                  :x (+ (get-x vector-one) (get-x vector-two))
                  :y (+ (get-y vector-one) (get-y vector-two))))
+
+(defmethod difference-vector ((vector-one vector2) (vector-two vector2))
+  (sum-vector vector-one (invert-vector vector-two)))
+
+(defmethod invert-vector ((vector vector2))
+  (make-vector2 (- (get-x vector)) (- (get-y vector))))
 
 (defmethod format-class ((class vector2))
   (format nil "(~a, ~a)" (get-x class) (get-y class)))
