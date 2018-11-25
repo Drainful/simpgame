@@ -1,4 +1,5 @@
 ;; MACROS
+(sb-ext:restrict-compiler-policy 'debug 3)
 (defmacro declaim-ftype (fname argument-types return-type)
   "create function type declaration"
   `(declaim (ftype (function ,argument-types ,return-type) ,fname)))

@@ -14,6 +14,26 @@
   (setf (slot-value object 'id) (id-counter object))
   (incf (id-counter object)))
 
+(defclass has-health ()
+  ((health :type integer
+           :initform 1
+           :initarg :health
+           :accessor health)))
+
+(defun take-damage-at (damage location model)
+  (check-type location vector2)
+  (let ((object (get-object-at location model)))
+    (when object (take-damage damage object model))))
+
+;; TODO add a thing to do something about zero hp.
+(defgeneric take-damage (damage object model)
+  (:documentation "object takes damage amount of damage, 
+and is deleted if its health drops to zero or below."))
+(defmethod take-damage (damage (object has-health) (model model))
+  (setf (health object) (- (health object) damage))
+  (when (< (health object) 0)
+    (remove-game-object object model)))
+
 (defclass has-position ()
   ((pos :type vector2
         :initform (make-vector2 0 0)
@@ -31,6 +51,12 @@
 
 (defmethod format-class ((class has-position))
   (format-class (pos class)))
+
+(defmethod get-x ((object has-position))
+  (get-x (pos object)))
+
+(defmethod get-y ((object has-position))
+  (get-y (pos object)))
 
 (defclass drawable ()
   ((glyph :type character
@@ -53,7 +79,7 @@
 (defmethod format-class ((object player))
   (concatenate 'string "player: " (call-next-method)))
 
-(defclass confused-snake (random-walker drawable-world-position game-object)
+(defclass confused-snake (random-walker drawable-world-position has-health game-object)
   ((glyph :initform #\s)))
 
 (defmethod format-class ((object confused-snake))

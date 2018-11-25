@@ -2,6 +2,7 @@
 - Need to make game object storage compatible with class redefinition of inheritance.
 - worry about enemy following player
 - worry about basic combat.
+  - already added damage and health
   
 * goals
 ** Short term

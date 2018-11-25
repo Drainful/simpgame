@@ -1,7 +1,7 @@
 ;;;; EVENTS
 
 ;;; event priority symbols
-(defparameter +priority+ '(:combat :movement))
+(defparameter +priority+ '(:attack :movement))
 
 (defun priority-int (priority)
   (find priority +priority+))
@@ -42,7 +42,8 @@
            :reader get-target)
    (damage :type integer
            :initarg :damage
-           :reader get-damage)))
+           :reader get-damage)
+   (priority :initform :attack)))
 
 (defgeneric make-attack-event (target actor)
   (:documentation "
@@ -52,6 +53,10 @@ Damage depends on the qualities of the actor."))
 (defmethod make-attack-event (target actor)
   (make-instance 'attack-event :target target :damage 1))
 
+(defgeneric move-or-attack-event (target actor model)
+  (:documentation "
+Creates either a move event or an attack event based on whether 
+there is a valid target at the given location according to the model."))
 (defmethod move-or-attack-event (target actor model)
   (if (get-object-at target model)
       (make-attack-event target actor)
@@ -61,14 +66,22 @@ Damage depends on the qualities of the actor."))
   (make-move-event-delta
    *player*
    (make-vector2 x y)))
-
+(defun player-mattack-event (dx dy model)
+  "creates a move or attack event based on the game object
+at the location of the delta from player position and (dx, dy)"
+  (let ((x (+ dx (get-x *player*)))
+        (y (+ dy (get-y *player*))))
+    (move-or-attack-event (make-vector2 x y)
+                           *player*
+                           model)))
 ;; could create events other than move
-(defun create-input-event (input)
+(defmethod create-input-event (input (model model))
+  "Requires a reference to model in order to determine whether to create a move or attack event"
    (case input
-     (#\h (player-move-event -1 0))
-     (#\j (player-move-event 0 1))
-     (#\k (player-move-event 0 -1))
-     (#\l (player-move-event 1 0))
+     (#\h (player-mattack-event -1 0 model))
+     (#\j (player-mattack-event 0 1 model))
+     (#\k (player-mattack-event 0 -1 model))
+     (#\l (player-mattack-event 1 0 model))
      (otherwise (player-move-event 0 0))))
 
 ;;;; EVENT CREATION
@@ -91,6 +104,9 @@ Damage depends on the qualities of the actor."))
 
 (defgeneric resolve-event (model event))
 
+(defmethod resolve-event (model (event attack-event))
+  (take-damage-at (get-damage event) (get-target event) model))
+
 (defmethod resolve-event ((model model) (event move-event))
   (update-position-collide (get-subject event) (get-target event) model))
 
@@ -107,5 +123,5 @@ Damage depends on the qualities of the actor."))
   (dolist (actor (set-to-list (get-game-objects-of-class (find-class 'has-behavior) (get-game-objects model))))
     (dolist (event (generate-behavior-events actor model))
       (add-event event (events model))))
-  (add-event (create-input-event player-input) (events model))
+  (add-event (create-input-event player-input model) (events model))
   (resolve-events model))
