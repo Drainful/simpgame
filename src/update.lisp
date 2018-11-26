@@ -26,6 +26,9 @@
            :reader get-target)
    (priority :initform :movement)))
 
+(defmethod enforce-movement-limitation ((vector vector2))
+  (randomly-cardinalize vector))
+
 (defmethod make-move-event-delta ((subject has-position) (delta vector2))
   (make-instance 'move-event :subject subject :target (sum-vector (pos subject) delta)))
 
@@ -64,10 +67,21 @@ there is a valid target at the given location according to the model."))
       (make-attack-event target actor)
       (make-move-event actor target)))
 
+(defmethod move-by-or-attack-event (delta actor model)
+  (let ((target (sum-vector (pos actor) delta)))
+    (move-or-attack-event target actor model)))
+
+(defmethod move-toward-or-attack-event (target actor model)
+  (flet ((cap-to-step (x) (max -1 (min 1 x))))
+    (let* ((delta (difference-vector target (pos actor)))
+           (step (enforce-movement-limitation (map-vec #'cap-to-step delta))))
+      (move-by-or-attack-event step actor model))))
+
 (defun player-move-event (x y)
   (make-move-event-delta
    *player*
    (make-vector2 x y)))
+
 (defun player-mattack-event (dx dy model)
   "creates a move or attack event based on the game object
 at the location of the delta from player position and (dx, dy)"
@@ -104,10 +118,8 @@ at the location of the delta from player position and (dx, dy)"
   (list (make-move-event-delta actor (make-vector2-random-walk))))
 (defmethod generate-behavior-events ((actor simple-attacker) model)
   (list (let ((dist (taxicab-distance (pos actor) (pos *player*))))
-          (if (<= dist
-                 ;;(get-aggression-range actor)
-                  1)
-              (move-or-attack-event (pos *player*) actor model)
+          (if (<= dist (get-aggression-range actor))
+              (move-toward-or-attack-event (pos *player*) actor model)
               (make-move-event-delta actor (make-vector2-random-walk))))))
 
 ;;;; EVENT RESOLUTION
