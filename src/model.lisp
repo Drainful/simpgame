@@ -1,6 +1,4 @@
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (ql:quickload :iterate :silent t)
-  (use-package 'iterate))
+(in-package :simpgame)
 
 (defclass model ()
   ((floor-tiles :type array

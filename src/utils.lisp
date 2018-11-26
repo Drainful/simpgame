@@ -1,3 +1,5 @@
+(in-package :simpgame)
+
 (defgeneric format-class (class))
 (defmethod format-class (class)
   (string "class"))

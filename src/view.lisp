@@ -1,3 +1,5 @@
+(in-package :simpgame)
+
 (defun view (model scr)
   (clear scr)
   (let* ((width (min (.width scr) (array-dimension (get-floor-tiles *model*) 0)))

@@ -1,3 +1,5 @@
+(in-package :simpgame)
+
 ;;;; BUILDING BLOCKS
 (defclass game-object ()
   ((id-counter :type integer
@@ -29,9 +31,9 @@
 (defgeneric take-damage (damage object model)
   (:documentation "object takes damage amount of damage, 
 and is deleted if its health drops to zero or below."))
-(defmethod take-damage (damage (object has-health) (model model))
+(defmethod take-damage (damage (object has-health) model)
   (setf (health object) (- (health object) damage))
-  (when (< (health object) 0)
+  (when (<= (health object) 0)
     (remove-game-object object model)))
 
 (defclass has-position ()
@@ -71,15 +73,21 @@ and is deleted if its health drops to zero or below."))
 ;;; BEHAVIOR
 (defclass has-behavior () ())
 (defclass random-walker (has-position has-behavior) ())
+(defclass simple-attacker (has-position has-behavior)
+  ((aggression-range :type integer
+                     :initform 10
+                     :initarg :aggression-range
+                     :reader get-aggression-range)))
 
 ;;;; GAME OBJECTS
-(defclass player (drawable-world-position game-object)
-  ((glyph :initform #\@)))
+(defclass player (drawable-world-position has-health game-object)
+  ((glyph :initform #\@)
+   (health :initform 10)))
 
 (defmethod format-class ((object player))
   (concatenate 'string "player: " (call-next-method)))
 
-(defclass confused-snake (random-walker drawable-world-position has-health game-object)
+(defclass confused-snake (simple-attacker random-walker drawable-world-position has-health game-object)
   ((glyph :initform #\s)))
 
 (defmethod format-class ((object confused-snake))

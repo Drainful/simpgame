@@ -1,3 +1,5 @@
+(in-package :simpgame)
+
 ;;;; EVENTS
 
 ;;; event priority symbols
@@ -85,13 +87,28 @@ at the location of the delta from player position and (dx, dy)"
      (otherwise (player-move-event 0 0))))
 
 ;;;; EVENT CREATION
+(define-method-combination behavior ()
+    ((methods (or)))
+  `(or ,@(mapcar #'(lambda (method)
+                      `(call-method ,method))
+                  methods)))
+
 (defgeneric generate-behavior-events (actor model)
   (:documentation "generates the events to do with the behavior of the given actor."))
+
+  ;;(:method-combination behavior)
 
 (defmethod generate-behavior-events ((actor has-behavior) model)
   (list))
 (defmethod generate-behavior-events ((actor random-walker) model)
   (list (make-move-event-delta actor (make-vector2-random-walk))))
+(defmethod generate-behavior-events ((actor simple-attacker) model)
+  (list (let ((dist (taxicab-distance (pos actor) (pos *player*))))
+          (if (<= dist
+                 ;;(get-aggression-range actor)
+                  1)
+              (move-or-attack-event (pos *player*) actor model)
+              (make-move-event-delta actor (make-vector2-random-walk))))))
 
 ;;;; EVENT RESOLUTION
 (defun resolve-events (model)

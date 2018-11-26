@@ -4,8 +4,7 @@ with import <nixpkgs> {};
           name = "simpgame";
           buildInputs = [ sbcl
                           ncurses
-                          lispPackages.quicklisp
-                          lispPackages.quicklisp-to-nix ];
+                          lispPackages.quicklisp ];
 
           shellHooks = ''
               emacs --daemon

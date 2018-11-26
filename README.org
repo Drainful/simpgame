@@ -5,4 +5,4 @@ Read todo.org to get an idea for where the project is going.
 ** Build Instructions
 1. Install nix package manager and run nix-shell to load the necessary libraries
   - or just install quicklisp and ncurses yourself
-2. mess with the source code in a repl until something cool happens
+2. Use asdf to load the "simpgame" system, then run simpgame:start to begin the game

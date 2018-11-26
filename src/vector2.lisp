@@ -1,3 +1,5 @@
+(in-package :simpgame)
+
 (defclass vector2 ()
   ((x :type integer
       :initarg :x
@@ -11,6 +13,16 @@
 
 (defun add-y (vec amount)
   (make-vector2 (get-x vec) (+ amount (get-y vec))))
+
+(defmethod magnitude ((vec vector2))
+  (expt (+ (expt (get-x vec) 2) (expt (get-y vec) 2)) 0.5))
+
+(defmethod euclidian-distance ((vector-one vector2) (vector-two vector2))
+  (magnitude (difference-vector vector-one vector-two)))
+
+(defmethod taxicab-distance ((vector-one vector2) (vector-two vector2))
+  (let ((difference (difference-vector vector-one vector-two)))
+    (+ (abs (get-x difference)) (abs (get-y difference)))))
 
 (fn make-vector2 (x y) (integer integer) vector2
   (make-instance 'vector2 :x x :y y))

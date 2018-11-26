@@ -3,6 +3,7 @@
 - worry about enemy following player
 - worry about basic combat.
   - already added damage and health
+- Make a method combiner for modular AI from behavior classes and make behaviors methods
   
 * goals
 ** Short term
