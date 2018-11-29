@@ -1,6 +1,6 @@
 (in-package :simpgame)
 
-;;;; BUILDING BLOCKS
+;;;; BUILDING BLOCKS/ASPECTS
 (defclass game-object ()
   ((id-counter :type integer
                :allocation :class

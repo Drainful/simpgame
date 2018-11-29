@@ -109,7 +109,6 @@ at the location of the delta from player position and (dx, dy)"
 
 (defgeneric generate-behavior-events (actor model)
   (:documentation "generates the events to do with the behavior of the given actor."))
-
   ;;(:method-combination behavior)
 
 (defmethod generate-behavior-events ((actor has-behavior) model)
