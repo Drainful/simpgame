@@ -1,13 +1,8 @@
 with import <nixpkgs> {};
 {
-    simpgame = stdenv.mkDerivation {
-          name = "simpgame";
-          buildInputs = [ sbcl
-                          ncurses
-                          lispPackages.quicklisp ];
-
-          shellHooks = ''
-              emacs --daemon
-          '';
+    simpgame = stdenv.mkDerivation rec {
+        name = "simpgame";
+        buildInputs = [ncurses];
+        LD_LIBRARY_PATH = pkgs.stdenv.lib.makeLibraryPath buildInputs;
     };
 }
