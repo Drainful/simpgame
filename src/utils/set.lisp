@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simpgame-utils)
 
 (defclass hash-set ()
   ((values :type hash-table

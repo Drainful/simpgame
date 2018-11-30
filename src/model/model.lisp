@@ -1,5 +1,10 @@
-(in-package :simpgame)
+(in-package :simpgame-model)
 
+;; INITIALIZE MODEL
+(eval-when (:load-toplevel)
+  (defparameter +world-size+ 1000))
+
+;; INITIALIZE MODEL
 (defclass model ()
   ((floor-tiles :type array
                 :initform (make-array (list +world-size+ +world-size+) :initial-element nil)
@@ -28,7 +33,7 @@
   ;; (handler-bind ((sb-int:invalid-array-index-error #'(lambda (_) (declare (ignore _)) nil)))
   ;;   (aref (get-floor-tiles model) (get-x position) (get-y position)))
 
-(defmethod get-player ((model model))
+(defmethod get-player-avatar ((model model))
   (first (set-to-list (get-game-objects-of-class (find-class 'player) (get-game-objects model)))))
 
 (defun clear-game-objects (model)
@@ -95,7 +100,7 @@
     (defparameter *model* (make-instance 'model :dungeon dungeon))
     (carve-region dungeon *model*)
     (spawn (make-instance 'player) *model*)
-    (defparameter *player* (get-player *model*))
+    (defparameter *player* (get-player-avatar *model*))
     (dotimes (_ 4)
       (spawn (make-instance 'confused-snake) *model*))))
 

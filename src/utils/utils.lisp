@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simpgame-utils)
 
 (defun random-element (list)
   "Get a random element of a list"
@@ -26,5 +26,5 @@
   (:documentation "Generic hash function"))
 
 ;; Make a generic hash table test with object equal p and object hash.
-(eval-when (:compile-toplevel :load-toplevel :execute)
+(eval-when (:load-toplevel :execute)
   (sb-ext:define-hash-table-test object-equal-p object-hash))

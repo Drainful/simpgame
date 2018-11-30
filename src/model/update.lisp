@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simpgame-model)
 
 ;;;; EVENTS
 
@@ -77,28 +77,19 @@ there is a valid target at the given location according to the model."))
            (step (enforce-movement-limitation (map-vec #'cap-to-step delta))))
       (move-by-or-attack-event step actor model))))
 
-(defun player-move-event (x y)
+(defun player-move-event (x y model)
   (make-move-event-delta
-   *player*
+   (get-player-avatar model)
    (make-vector2 x y)))
 
 (defun player-mattack-event (dx dy model)
   "creates a move or attack event based on the game object
 at the location of the delta from player position and (dx, dy)"
-  (let ((x (+ dx (get-x *player*)))
-        (y (+ dy (get-y *player*))))
+  (let ((x (+ dx (get-x (get-player-avatar model))))
+        (y (+ dy (get-y (get-player-avatar model)))))
     (move-or-attack-event (make-vector2 x y)
-                           *player*
+                           (get-player-avatar model)
                            model)))
-;; could create events other than move
-(defmethod create-input-event (input (model model))
-  "Requires a reference to model in order to determine whether to create a move or attack event"
-   (case input
-     (#\h (player-mattack-event -1 0 model))
-     (#\j (player-mattack-event 0 1 model))
-     (#\k (player-mattack-event 0 -1 model))
-     (#\l (player-mattack-event 1 0 model))
-     (otherwise (player-move-event 0 0))))
 
 ;;;; EVENT CREATION
 (define-method-combination behavior ()
@@ -116,9 +107,9 @@ at the location of the delta from player position and (dx, dy)"
 (defmethod generate-behavior-events ((actor random-walker) model)
   (list (make-move-event-delta actor (make-vector2-random-walk))))
 (defmethod generate-behavior-events ((actor simple-attacker) model)
-  (list (let ((dist (taxicab-distance (pos actor) (pos *player*))))
+  (list (let ((dist (taxicab-distance (pos actor) (pos (get-player-avatar model)))))
           (if (<= dist (get-aggression-range actor))
-              (move-toward-or-attack-event (pos *player*) actor model)
+              (move-toward-or-attack-event (pos (get-player-avatar model)) actor model)
               (make-move-event-delta actor (make-vector2-random-walk))))))
 
 ;;;; EVENT RESOLUTION
@@ -146,10 +137,13 @@ at the location of the delta from player position and (dx, dy)"
     (mutate-position subject target)))
 
 ;;;; UPDATE FUNCTION
-(defun update (model player-input)
+(defun update (model input-events)
   "Update the model based on both player input and actor behaviors"
   (dolist (actor (set-to-list (get-game-objects-of-class (find-class 'has-behavior) (get-game-objects model))))
     (dolist (event (generate-behavior-events actor model))
       (add-event event (events model))))
-  (add-event (create-input-event player-input model) (events model))
+  (dolist (event input-events)
+    (add-event event (events model)))
+
+  ;;(add-event (create-input-event player-input model) (events model))
   (resolve-events model))
