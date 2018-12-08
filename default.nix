@@ -28,3 +28,4 @@ with import <nixpkgs> {};
         LD_LIBRARY_PATH = "/run/opengl-driver/lib:/run/opengl-driver-32/lib" + pkgs.stdenv.lib.makeLibraryPath buildInputs;
     };
 }
+

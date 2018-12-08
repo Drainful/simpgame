@@ -34,6 +34,7 @@
    :difference-vector
    :invert-vector
    :randomly-cardinalize
+   :make-vector2-random-walk
    :add-x
    :add-y
    :magnitude
@@ -46,11 +47,14 @@
    #:iterate
    #:simpgame-utils)
   (:export
-   ;; API for controller to control model from ui events
    :model
    :model-init
+   ;; controls
    :update
-   :player-mattack-event))
+   :player-mattack-event
+   ;; view
+   :get-visible-objects
+   ))
 
 (defpackage simpgame-gamekit-view
   (:use

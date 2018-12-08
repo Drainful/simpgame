@@ -18,29 +18,40 @@
 ;; (defgeneric draw-object (drawable screen)
 ;;   (:documentation "draws a drawable object on the screen"))
 
-;; (defvar *canvas-width* 1200)
-;; (defvar *canvas-height* 800)
-;; (defvar *black* (vec4 0 0 0 1))
-;; (defvar *origin* (vec2 0 0))
-  ; window's title
+(defvar *assets-path* (asdf:system-relative-pathname :qtools-game "assets/"))
 
-;; (gamekit:defgame simpgame () ())
-;; (defmethod gamekit:draw ((app simpgame))
-;;   ;; Let's draw a black box in the bottom-left corner
-;;   (gamekit:draw-rect *origin* 100 100 :fill-paint *black*))
+(defun asset (pathname)
+  (merge-pathnames pathname *assets-path*))
 
-;; (defun main ()
-;;   (model-init)
-;;   (start 'simpgame))
+;; VIEW
+(define-widget view (QGraphicsView) ())
+;; send keypresses to *model*, then call next qmethod.
+(define-override (view key-press-event) (ev)
+  (update simpgame-model::*model* `(,(create-input-event (q+:key ev) simpgame-model::*model*)))
+  (call-next-qmethod))
 
-(defun main ())
+;; SCENE
+(define-widget scene (QGraphicsScene) ())
+
+;; Main widget
+(define-widget simpgame (QWidget) ())
+
+(define-subwidget (simpgame view) (make-instance 'view))
+
+(define-subwidget (simpgame layout) (q+:make-qvboxlayout simpgame)
+  (setf (q+:window-title simpgame) "Simpgame")
+  (q+:add-widget layout view))
+
+(defun main ()
+  (model-init)
+  (with-main-window (window (make-instance 'simpgame))))
 
 ;; could create events other than move
 (defmethod create-input-event (input (model model))
   "Requires a reference to model in order to determine whether to create a move or attack event"
-   (case input
-     (#\h (player-mattack-event -1 0 model))
-     (#\j (player-mattack-event 0 1 model))
-     (#\k (player-mattack-event 0 -1 model))
-     (#\l (player-mattack-event 1 0 model))
-     (otherwise (player-mattack-event 0 0 model))))
+   (cond
+     ((= input (q+:qt.key_h)) (player-mattack-event -1 0 model))
+     ((= input (q+:qt.key_j)) (player-mattack-event 0 1 model))
+     ((= input (q+:qt.key_k)) (player-mattack-event 0 -1 model))
+     ((= input (q+:qt.key_l)) (player-mattack-event 1 0 model))
+     (t (player-mattack-event 0 0 model))))

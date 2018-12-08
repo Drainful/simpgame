@@ -54,11 +54,11 @@ and is deleted if its health drops to zero or below."))
 (defmethod format-class ((class has-position))
   (format-class (pos class)))
 
-;; (defmethod get-x ((object has-position))
-;;   (get-x (pos object)))
+(defmethod get-x ((object has-position))
+  (get-x (pos object)))
 
-;; (defmethod get-y ((object has-position))
-;;   (get-y (pos object)))
+(defmethod get-y ((object has-position))
+  (get-y (pos object)))
 
 (defclass drawable ()
   ((glyph :type character
