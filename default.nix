@@ -2,8 +2,7 @@ with import <nixpkgs> {};
 {
     simpgame = stdenv.mkDerivation rec {
         name = "simpgame";
-        buildInputs = [
-                        sbcl
+        buildInputs = [ sbcl
                         ncurses
 
                         # gamekit
@@ -24,7 +23,7 @@ with import <nixpkgs> {};
                         xorg.libXrender
                         xorg.libfontenc
                         xorg.libXext
-                        xorg.libX11];
+                        xorg.libX11 ];
         LD_LIBRARY_PATH = "/run/opengl-driver/lib:/run/opengl-driver-32/lib" + pkgs.stdenv.lib.makeLibraryPath buildInputs;
     };
 }
