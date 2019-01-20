@@ -17,14 +17,15 @@
   "Get all superclasses of a CLOS object"
   (sb-mop:class-precedence-list (class-of object)))
 
-(defgeneric object-equal-p (o1 o2)
-  (:documentation "Generic object equality"))
-(defmethod object-equal-p (o1 o2)
-  (equalp o1 o2))
-
-(defgeneric object-hash (object)
-  (:documentation "Generic hash function"))
-
 ;; Make a generic hash table test with object equal p and object hash.
 (eval-when (:compile-toplevel :load-toplevel :execute)
+
+  (defgeneric object-equal-p (o1 o2)
+    (:documentation "Generic object equality"))
+  (defmethod object-equal-p (o1 o2)
+    (equalp o1 o2))
+
+  (defgeneric object-hash (object)
+    (:documentation "Generic hash function"))
+
   (sb-ext:define-hash-table-test object-equal-p object-hash))
