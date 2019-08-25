@@ -12,7 +12,7 @@
 
 ;; CORE LOOP, update then view.
 (defun map-state ()
-  (with-screen (scr :input-echoing nil :input-blocking t :enable-colors t :cursor-visibility nil)
+  (with-screen (scr :input-echoing nil :input-blocking t :enable-colors t :cursor-visible nil)
     (event-case (scr event)
       (#\q (return-from event-case))
       (otherwise
