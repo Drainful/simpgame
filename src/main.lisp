@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simple-game)
 
 ;; PACKAGES
 (eval-when (:compile-toplevel :load-toplevel :execute)

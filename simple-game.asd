@@ -1,4 +1,4 @@
-(asdf:defsystem #:simpgame
+(asdf:defsystem #:simple-game
   :serial t
   :description "A simple roguelike"
   :version "0.0.1"

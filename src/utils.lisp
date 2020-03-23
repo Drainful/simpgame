@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simple-game)
 
 (defun random-element (list)
   "Get a random element of a list"

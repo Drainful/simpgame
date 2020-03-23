@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simple-game)
 
 ;; MACROS
 (sb-ext:restrict-compiler-policy 'debug 3)

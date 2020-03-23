@@ -1,4 +1,4 @@
-(defpackage :simpgame
+(defpackage :simple-game
   (:use
    :common-lisp
    :croatoan

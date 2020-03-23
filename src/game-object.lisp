@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simple-game)
 
 ;;;; BUILDING BLOCKS/ASPECTS
 (defclass game-object ()

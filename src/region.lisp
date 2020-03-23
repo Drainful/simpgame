@@ -1,7 +1,7 @@
 ;;;; Generic functions on "regions", conceptualized as a set of locations,
 ;;;; with an optional value at each location.
 
-(in-package :simpgame)
+(in-package :simple-game)
 
 (defclass hash-region ()
   ((locations :type hash-table

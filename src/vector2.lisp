@@ -1,4 +1,4 @@
-(in-package :simpgame)
+(in-package :simple-game)
 
 (defclass vector2 ()
   ((x :type integer
