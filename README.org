@@ -1,4 +1,4 @@
-* Simpgame
+* simple-game
 It's a little learning project for common lisp.
 Read todo.org to get an idea for where the project is going.
 
